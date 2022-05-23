@@ -1,0 +1,41 @@
+---
+- name: Install docker
+  hosts: all
+  become: true
+
+  tasks:
+        - name: Add Docker GPG apt Key
+          apt_key:
+                url: https://download.docker.com/linux/ubuntu/gpg
+                state: present
+
+        - name: Add Docker Repository
+          apt_repository:
+                repo: deb https://download.docker.com/linux/ubuntu focal stable
+                state: present
+
+        - name: Update apt and install docker-ce
+          apt:
+                name: docker-ce
+                state: latest
+                update_cache: true
+
+        - name: update user group
+          ansible.builtin.user:
+                name: '{{ ansible_ssh_user }}'
+                groups: docker
+        
+        - name: Add a new user named devops
+          user:
+                name: '{{ username }}'
+                shell: /bin/bash
+
+        - name: Add devops user to the sudoers
+          copy:
+                dest: "/etc/sudoers.d/devops"
+                content: "devops  ALL=(ALL)  NOPASSWD: ALL"
+
+        - name: Deploy SSH Key
+          authorized_key: user={{ username }}
+                          key="{{ lookup('file', '{{ user_key }}') }}"
+                          state=present
